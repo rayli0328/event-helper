@@ -48,6 +48,7 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
       // Fetch available games first
       const activeGames = await getActiveGames();
       console.log('🎮 Active games found:', activeGames.length);
+      console.log('🎮 Games data:', activeGames);
       setGames(activeGames);
       setCachedGames(activeGames);
       

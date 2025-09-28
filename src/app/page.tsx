@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { QrCode, Users, Trophy, Settings, Database, Plus } from 'lucide-react';
+import { QrCode, Users, Trophy, Settings, Database, Plus, Gamepad2 } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -117,6 +117,14 @@ export default function Home() {
           >
             <Database className="w-5 h-5 mr-2" />
             Simple Debug
+          </Link>
+          <br />
+          <Link 
+            href="/debug-games"
+            className="inline-flex items-center text-orange-600 hover:text-orange-800 font-medium"
+          >
+            <Gamepad2 className="w-5 h-5 mr-2" />
+            Debug Games
           </Link>
         </div>
 

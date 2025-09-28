@@ -121,14 +121,35 @@ export const getGames = async () => {
 };
 
 export const getActiveGames = async () => {
-  // Optimized query with specific where clause and ordering
-  const q = query(
-    collection(db, 'games'), 
-    where('isActive', '==', true),
-    orderBy('createdAt', 'asc')
-  );
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+  try {
+    // First try to get games with isActive: true
+    const activeQuery = query(
+      collection(db, 'games'), 
+      where('isActive', '==', true),
+      orderBy('createdAt', 'asc')
+    );
+    const activeSnapshot = await getDocs(activeQuery);
+    
+    if (!activeSnapshot.empty) {
+      return activeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+    }
+    
+    // If no active games found, get all games (for backward compatibility)
+    console.log('No active games found, fetching all games...');
+    const allQuery = query(
+      collection(db, 'games'),
+      orderBy('createdAt', 'asc')
+    );
+    const allSnapshot = await getDocs(allQuery);
+    return allSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+    
+  } catch (error) {
+    console.error('Error fetching games:', error);
+    // Fallback: get all games without ordering
+    const fallbackQuery = query(collection(db, 'games'));
+    const fallbackSnapshot = await getDocs(fallbackQuery);
+    return fallbackSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+  }
 };
 
 export const deleteGame = async (gameId: string) => {
