@@ -47,14 +47,10 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
     try {
       // Fetch available games first
       const activeGames = await getActiveGames();
-      console.log('🎮 Active games found:', activeGames.length);
-      console.log('🎮 Games data:', activeGames);
       setGames(activeGames);
       setCachedGames(activeGames);
       
-      console.log('👤 Looking for participant:', { staffId, lastName });
       const participant = await getParticipantByStaffIdAndLastName(staffId, lastName);
-      console.log('👤 Participant found:', participant ? 'YES' : 'NO');
       
       if (participant) {
         const newProgress = {
@@ -62,8 +58,6 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
           total: activeGames.length,
           completedGames: participant.completedGames
         };
-        
-        console.log('📊 Progress:', newProgress);
         
         // Check if progress has increased (new game completed)
         if (newProgress.completed > progress.completed) {
@@ -81,7 +75,6 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         setCachedParticipant(participant);
         setCacheTimestamp(new Date());
       } else {
-        console.log('❌ No participant found for:', { staffId, lastName });
         setProgress({
           completed: 0,
           total: activeGames.length,

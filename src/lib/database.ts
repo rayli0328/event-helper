@@ -122,30 +122,41 @@ export const getGames = async () => {
 
 export const getActiveGames = async () => {
   try {
-    // First try to get games with isActive: true
+    // First try to get games with isActive: true (without ordering to avoid index requirement)
     const activeQuery = query(
       collection(db, 'games'), 
-      where('isActive', '==', true),
-      orderBy('createdAt', 'asc')
+      where('isActive', '==', true)
     );
     const activeSnapshot = await getDocs(activeQuery);
     
     if (!activeSnapshot.empty) {
-      return activeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+      const games = activeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+      // Sort manually to avoid index requirement
+      return games.sort((a, b) => {
+        if (a.createdAt && b.createdAt) {
+          return a.createdAt.getTime() - b.createdAt.getTime();
+        }
+        return 0;
+      });
     }
     
     // If no active games found, get all games (for backward compatibility)
     console.log('No active games found, fetching all games...');
-    const allQuery = query(
-      collection(db, 'games'),
-      orderBy('createdAt', 'asc')
-    );
+    const allQuery = query(collection(db, 'games'));
     const allSnapshot = await getDocs(allQuery);
-    return allSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+    const games = allSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+    
+    // Sort manually to avoid index requirement
+    return games.sort((a, b) => {
+      if (a.createdAt && b.createdAt) {
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      }
+      return 0;
+    });
     
   } catch (error) {
     console.error('Error fetching games:', error);
-    // Fallback: get all games without ordering
+    // Fallback: get all games without any filtering
     const fallbackQuery = query(collection(db, 'games'));
     const fallbackSnapshot = await getDocs(fallbackQuery);
     return fallbackSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
