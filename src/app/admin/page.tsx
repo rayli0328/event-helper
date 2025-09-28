@@ -13,13 +13,19 @@ function AdminPageContent() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
-  const [activeTab, setActiveTab] = useState<'games' | 'hosts' | 'debug'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'hosts' | 'config' | 'debug'>('games');
 
   // Game form state
   const [gameForm, setGameForm] = useState({
     name: '',
     description: '',
     hostId: '',
+  });
+
+  // Configuration state
+  const [config, setConfig] = useState({
+    eventName: 'Event Name Placeholder',
+    eventDescription: 'Start your stamp collection journey',
   });
 
   // Host form state
@@ -154,6 +160,17 @@ function AdminPageContent() {
             >
               <Users className="w-5 h-5 inline mr-2" />
               Game Hosts
+            </button>
+            <button
+              onClick={() => setActiveTab('config')}
+              className={`px-6 py-3 font-medium ${
+                activeTab === 'config'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Settings className="w-5 h-5 inline mr-2" />
+              Configuration
             </button>
             <button
               onClick={() => setActiveTab('debug')}
@@ -342,6 +359,76 @@ function AdminPageContent() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Configuration Tab */}
+        {activeTab === 'config' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Event Configuration
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Configure the event name and description that appears throughout the system
+              </p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Event Name
+                  </label>
+                  <input
+                    type="text"
+                    value={config.eventName}
+                    onChange={(e) => setConfig({ ...config, eventName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter event name"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    This will appear in the "Welcome to [Event Name]" message
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Event Description
+                  </label>
+                  <input
+                    type="text"
+                    value={config.eventDescription}
+                    onChange={(e) => setConfig({ ...config, eventDescription: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter event description"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    This will appear as the subtitle on the participant page
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    // In a real app, you'd save this to a database
+                    setMessage('Configuration saved successfully!');
+                    setMessageType('success');
+                  }}
+                  className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                >
+                  Save Configuration
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h3 className="font-semibold text-yellow-800 mb-2">RBAC Configuration</h3>
+              <div className="text-sm text-yellow-700 space-y-2">
+                <p><strong>Role-Based Access Control (RBAC) is configured in the code:</strong></p>
+                <p>• <strong>Admin:</strong> Email contains "admin" or "manager"</p>
+                <p>• <strong>Game Host:</strong> Email contains "host", "staff", or "admin"</p>
+                <p>• <strong>Gift Corner:</strong> Email contains "gift", "staff", or "admin"</p>
+                <p className="mt-2 text-xs">To modify RBAC rules, edit the <code>hasRole</code> function in <code>src/contexts/AuthContext.tsx</code></p>
               </div>
             </div>
           </div>

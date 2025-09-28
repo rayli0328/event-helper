@@ -242,12 +242,12 @@ function GiftCornerPageContent() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Gift Corner
-          </h1>
-          <p className="text-gray-600">
-            Scan participant QR codes to verify all games completed
-          </p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Gift Corner
+              </h1>
+              <p className="text-gray-600">
+                Verify games completed and give gifts
+              </p>
         </div>
 
         {/* Messages at the top */}

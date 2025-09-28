@@ -74,13 +74,6 @@ export default function ParticipantPage() {
     <div className="min-h-screen p-4">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <Link 
-            href="/" 
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome to <span className="text-blue-600">Event Name Placeholder</span>
           </h1>
