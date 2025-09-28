@@ -13,12 +13,13 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Participant, Game, GameCompletion, GameHost, QRCodeData } from '@/types';
+import { Participant, Game, GameCompletion, GameHost, QRCodeData, GiftRedemption } from '@/types';
 
 // Participants
 export const createParticipant = async (participant: Omit<Participant, 'id' | 'createdAt'>) => {
   const docRef = await addDoc(collection(db, 'participants'), {
     ...participant,
+    giftRedeemed: false,
     createdAt: Timestamp.now(),
   });
   return docRef.id;
@@ -172,4 +173,36 @@ export const getGameHostByGameId = async (gameId: string) => {
     return { id: doc.id, ...doc.data() } as GameHost;
   }
   return null;
+};
+
+// Gift Redemption
+export const redeemGift = async (participantId: string, redeemedBy: string) => {
+  const batch = writeBatch(db);
+  
+  // Update participant's gift redemption status
+  const participantRef = doc(db, 'participants', participantId);
+  batch.update(participantRef, {
+    giftRedeemed: true,
+    giftRedeemedAt: Timestamp.now(),
+  });
+  
+  // Create gift redemption record
+  const redemptionRef = doc(collection(db, 'giftRedemptions'));
+  batch.set(redemptionRef, {
+    participantId,
+    redeemedAt: Timestamp.now(),
+    redeemedBy,
+  });
+  
+  await batch.commit();
+  return redemptionRef.id;
+};
+
+export const getGiftRedemptions = async () => {
+  const q = query(
+    collection(db, 'giftRedemptions'),
+    orderBy('redeemedAt', 'desc')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GiftRedemption));
 };

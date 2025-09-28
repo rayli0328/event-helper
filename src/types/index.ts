@@ -4,6 +4,8 @@ export interface Participant {
   lastName: string;
   qrCode: string;
   completedGames: string[];
+  giftRedeemed: boolean;
+  giftRedeemedAt?: Date;
   createdAt: Date;
 }
 
@@ -35,4 +37,11 @@ export interface QRCodeData {
   staffId: string;
   lastName: string;
   participantId: string;
+}
+
+export interface GiftRedemption {
+  id: string;
+  participantId: string;
+  redeemedAt: Date;
+  redeemedBy: string; // Staff member who processed the redemption
 }

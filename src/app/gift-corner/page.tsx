@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { parseQRCode } from '@/lib/qrCode';
-import { getParticipant, getActiveGames, getParticipantByStaffIdAndLastName } from '@/lib/database';
+import { getParticipant, getActiveGames, getParticipantByStaffIdAndLastName, redeemGift } from '@/lib/database';
 import { QRCodeData, Game } from '@/types';
 import { ArrowLeft, Camera, Trophy, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -18,6 +18,8 @@ export default function GiftCornerPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [manualStaffId, setManualStaffId] = useState('');
   const [manualLastName, setManualLastName] = useState('');
+  const [redeemingGift, setRedeemingGift] = useState(false);
+  const [giftRedeemed, setGiftRedeemed] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const qrScannerRef = useRef<QrScanner | null>(null);
 
@@ -199,6 +201,27 @@ export default function GiftCornerPage() {
     return participant.completedGames?.length >= games.length;
   };
 
+  const handleRedeemGift = async () => {
+    if (!participant || !scannedData) return;
+    
+    setRedeemingGift(true);
+    try {
+      await redeemGift(scannedData.participantId, 'gift-corner-staff');
+      setGiftRedeemed(true);
+      setMessage('🎉 Gift redeemed successfully! Participant has received their reward.');
+      setMessageType('success');
+      
+      // Refresh participant data to show updated status
+      const updatedParticipant = await getParticipant(scannedData.participantId);
+      setParticipant(updatedParticipant);
+    } catch (error) {
+      setMessage('Failed to redeem gift. Please try again.');
+      setMessageType('error');
+    } finally {
+      setRedeemingGift(false);
+    }
+  };
+
   const getCompletionStatus = () => {
     if (!participant || !games.length) return { completed: 0, total: 0 };
     return {
@@ -378,22 +401,55 @@ export default function GiftCornerPage() {
                 {/* Gift Eligibility */}
                 <div className={`p-4 rounded-lg ${
                   isEligibleForGift() 
-                    ? 'bg-green-100 border border-green-400' 
+                    ? participant?.giftRedeemed 
+                      ? 'bg-blue-100 border border-blue-400' 
+                      : 'bg-green-100 border border-green-400'
                     : 'bg-yellow-100 border border-yellow-400'
                 }`}>
                   {isEligibleForGift() ? (
-                    <div className="text-center">
-                      <Trophy className="w-12 h-12 text-green-600 mx-auto mb-2" />
-                      <h3 className="text-lg font-semibold text-green-800 mb-2">
-                        🎉 Congratulations! 🎉
-                      </h3>
-                      <p className="text-green-700 mb-4">
-                        This participant has completed all {games.length} games and is eligible for a gift!
-                      </p>
-                      <button className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700">
-                        Give Gift
-                      </button>
-                    </div>
+                    participant?.giftRedeemed ? (
+                      <div className="text-center">
+                        <Trophy className="w-12 h-12 text-blue-600 mx-auto mb-2" />
+                        <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                          ✅ Gift Already Redeemed
+                        </h3>
+                        <p className="text-blue-700 mb-2">
+                          This participant has already received their gift.
+                        </p>
+                        {participant.giftRedeemedAt && (
+                          <p className="text-blue-600 text-sm">
+                            Redeemed on: {new Date(participant.giftRedeemedAt.seconds * 1000).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Trophy className="w-12 h-12 text-green-600 mx-auto mb-2" />
+                        <h3 className="text-lg font-semibold text-green-800 mb-2">
+                          🎉 Congratulations! 🎉
+                        </h3>
+                        <p className="text-green-700 mb-4">
+                          This participant has completed all {games.length} games and is eligible for a gift!
+                        </p>
+                        <button 
+                          onClick={handleRedeemGift}
+                          disabled={redeemingGift}
+                          className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
+                        >
+                          {redeemingGift ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <Trophy className="w-4 h-4 mr-2" />
+                              Redeem Gift
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )
                   ) : (
                     <div className="text-center">
                       <XCircle className="w-12 h-12 text-yellow-600 mx-auto mb-2" />
@@ -406,6 +462,22 @@ export default function GiftCornerPage() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Start New Scan Button */}
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    setScannedData(null);
+                    setParticipant(null);
+                    setGiftRedeemed(false);
+                    setMessage('');
+                    setMessageType('');
+                  }}
+                  className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700"
+                >
+                  Start New Scan
+                </button>
               </div>
             </div>
           )}
