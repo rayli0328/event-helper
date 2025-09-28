@@ -59,11 +59,14 @@ export const getParticipantByStaffIdAndLastName = async (staffId: string, lastNa
 export const updateParticipantGames = async (participantId: string, gameId: string) => {
   const participant = await getParticipant(participantId);
   if (participant) {
-    const updatedGames = [...participant.completedGames, gameId];
-    const docRef = doc(db, 'participants', participantId);
-    await updateDoc(docRef, {
-      completedGames: updatedGames,
-    });
+    // Check if game is already completed to prevent duplicates
+    if (!participant.completedGames.includes(gameId)) {
+      const updatedGames = [...participant.completedGames, gameId];
+      const docRef = doc(db, 'participants', participantId);
+      await updateDoc(docRef, {
+        completedGames: updatedGames,
+      });
+    }
   }
 };
 

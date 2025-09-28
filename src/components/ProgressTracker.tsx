@@ -18,6 +18,8 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [newlyCompleted, setNewlyCompleted] = useState<string[]>([]);
 
   const fetchProgress = async () => {
     if (!staffId || !lastName) return;
@@ -29,11 +31,25 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
       
       const participant = await getParticipantByStaffIdAndLastName(staffId, lastName);
       if (participant) {
-        setProgress({
+        const newProgress = {
           completed: participant.completedGames.length,
           total: activeGames.length,
           completedGames: participant.completedGames
-        });
+        };
+        
+        // Check if progress has increased (new game completed)
+        if (newProgress.completed > progress.completed) {
+          setLastUpdate(new Date());
+          // Find newly completed games
+          const newCompleted = newProgress.completedGames.filter(
+            gameId => !progress.completedGames.includes(gameId)
+          );
+          setNewlyCompleted(newCompleted);
+          // Clear the animation after 3 seconds
+          setTimeout(() => setNewlyCompleted([]), 3000);
+        }
+        
+        setProgress(newProgress);
       } else {
         setProgress({
           completed: 0,
@@ -120,6 +136,11 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
           <div className="text-blue-600 text-sm text-center mt-1">
             Keep collecting to earn your reward
           </div>
+          {lastUpdate && (
+            <div className="text-green-600 text-sm text-center mt-2 font-semibold">
+              ✅ Last updated: {lastUpdate.toLocaleTimeString()}
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-green-50 rounded-lg p-4 mb-6">
@@ -129,6 +150,11 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
           <div className="text-green-600 text-sm text-center mt-1">
             Visit the Gift Corner to claim your reward
           </div>
+          {lastUpdate && (
+            <div className="text-green-600 text-sm text-center mt-2 font-semibold">
+              ✅ Completed at: {lastUpdate.toLocaleTimeString()}
+            </div>
+          )}
         </div>
       )}
 
@@ -144,6 +170,7 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
           <div className={`grid gap-4 ${progress.total <= 3 ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {games.map((game, index) => {
               const isCompleted = progress.completedGames.includes(game.id);
+              const isNewlyCompleted = newlyCompleted.includes(game.id);
               const boothNumber = index + 1;
               
               // Define icons for each game
@@ -153,15 +180,24 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
               return (
                 <div 
                   key={game.id}
-                  className={`border-2 border-dashed rounded-lg p-4 text-center relative ${
+                  className={`border-2 border-dashed rounded-lg p-4 text-center relative transition-all duration-500 ${
                     isCompleted 
                       ? 'border-green-400 bg-green-50' 
                       : 'border-gray-300 bg-gray-50'
+                  } ${
+                    isNewlyCompleted 
+                      ? 'animate-pulse bg-green-100 border-green-500 shadow-lg scale-105' 
+                      : ''
                   }`}
                 >
                   <div className="text-xs text-gray-500 absolute top-1 right-1">
                     B{boothNumber}
                   </div>
+                  {isNewlyCompleted && (
+                    <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1 py-0.5 rounded-full font-bold animate-bounce">
+                      NEW!
+                    </div>
+                  )}
                   <div className="mt-2">
                     {isCompleted ? (
                       <div className="text-2xl">{icon}</div>

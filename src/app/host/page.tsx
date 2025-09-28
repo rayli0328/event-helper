@@ -113,11 +113,9 @@ export default function HostPage() {
       if (scannedData) {
         const updatedParticipant = await getParticipant(scannedData.participantId);
         setParticipant(updatedParticipant);
+        // Keep the scanned data so progress tracker remains visible
+        // Don't reset the form immediately to show updated progress
       }
-      
-      // Reset form
-      setScannedData(null);
-      setParticipant(null);
     } catch (error) {
       setMessage('Failed to mark game as completed');
       setMessageType('error');
@@ -390,9 +388,9 @@ export default function HostPage() {
               {selectedGame && (
                 <div className="mt-4">
                   {participant.completedGames?.includes(selectedGame) ? (
-                    <div className="flex items-center text-green-600">
+                    <div className="flex items-center text-green-600 bg-green-50 p-3 rounded-lg">
                       <CheckCircle className="w-5 h-5 mr-2" />
-                      Already completed this game
+                      ✅ Already completed this game
                     </div>
                   ) : (
                     <button
@@ -426,6 +424,22 @@ export default function HostPage() {
                     <ProgressTracker staffId={scannedData.staffId} lastName={scannedData.lastName} />
                   </div>
                 )}
+              </div>
+
+              {/* Start New Scan Button */}
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    setScannedData(null);
+                    setParticipant(null);
+                    setShowProgress(false);
+                    setMessage('');
+                    setMessageType('');
+                  }}
+                  className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700"
+                >
+                  Start New Scan
+                </button>
               </div>
             </div>
           )}
