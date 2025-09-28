@@ -42,6 +42,20 @@ export const getParticipantByStaffId = async (staffId: string) => {
   return null;
 };
 
+export const getParticipantByStaffIdAndLastName = async (staffId: string, lastName: string) => {
+  const q = query(collection(db, 'participants'), where('staffId', '==', staffId));
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const doc = querySnapshot.docs[0];
+    const participant = { id: doc.id, ...doc.data() } as Participant;
+    // Check if last name matches (case insensitive)
+    if (participant.lastName.toLowerCase() === lastName.toLowerCase()) {
+      return participant;
+    }
+  }
+  return null;
+};
+
 export const updateParticipantGames = async (participantId: string, gameId: string) => {
   const participant = await getParticipant(participantId);
   if (participant) {

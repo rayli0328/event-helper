@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { parseQRCode } from '@/lib/qrCode';
-import { getParticipant, updateParticipantGames, createGameCompletion, getActiveGames, getParticipantByStaffId } from '@/lib/database';
+import { getParticipant, updateParticipantGames, createGameCompletion, getActiveGames, getParticipantByStaffIdAndLastName } from '@/lib/database';
 import { QRCodeData, Game } from '@/types';
 import { ArrowLeft, Camera, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -209,8 +209,8 @@ export default function HostPage() {
 
     try {
       // Find participant by staff ID
-      const participantData = await getParticipantByStaffId(manualStaffId);
-      if (participantData && participantData.lastName.toLowerCase() === manualLastName.toLowerCase()) {
+      const participantData = await getParticipantByStaffIdAndLastName(manualStaffId, manualLastName);
+      if (participantData) {
         const qrData: QRCodeData = {
           staffId: manualStaffId,
           lastName: manualLastName,

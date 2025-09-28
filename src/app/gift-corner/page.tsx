@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { parseQRCode } from '@/lib/qrCode';
-import { getParticipant, getActiveGames } from '@/lib/database';
+import { getParticipant, getActiveGames, getParticipantByStaffIdAndLastName } from '@/lib/database';
 import { QRCodeData, Game } from '@/types';
 import { ArrowLeft, Camera, Trophy, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -16,6 +16,8 @@ export default function GiftCornerPage() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
   const [isScanning, setIsScanning] = useState(false);
+  const [manualStaffId, setManualStaffId] = useState('');
+  const [manualLastName, setManualLastName] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const qrScannerRef = useRef<QrScanner | null>(null);
 
@@ -79,6 +81,36 @@ export default function GiftCornerPage() {
       setMessageType('error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleManualEntry = async () => {
+    if (!manualStaffId.trim() || !manualLastName.trim()) {
+      setMessage('Please enter both Staff ID and Last Name');
+      setMessageType('error');
+      return;
+    }
+
+    try {
+      // Find participant by staff ID and last name
+      const participantData = await getParticipantByStaffIdAndLastName(manualStaffId, manualLastName);
+      if (participantData) {
+        const qrData: QRCodeData = {
+          staffId: manualStaffId,
+          lastName: manualLastName,
+          participantId: participantData.id,
+        };
+        setScannedData(qrData);
+        setParticipant(participantData);
+        setMessage('Participant found successfully!');
+        setMessageType('success');
+      } else {
+        setMessage('Participant not found. Please check Staff ID and Last Name.');
+        setMessageType('error');
+      }
+    } catch (error) {
+      setMessage('Error finding participant. Please try again.');
+      setMessageType('error');
     }
   };
 
@@ -194,6 +226,17 @@ export default function GiftCornerPage() {
           </p>
         </div>
 
+        {/* Messages at the top */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            messageType === 'success' 
+              ? 'bg-green-100 border border-green-400 text-green-700'
+              : 'bg-red-100 border border-red-400 text-red-700'
+          }`}>
+            {message}
+          </div>
+        )}
+
         <div className="space-y-6">
           {/* QR Scanner */}
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -247,17 +290,39 @@ export default function GiftCornerPage() {
               </div>
             </div>
 
-            {/* Manual QR Input */}
+            {/* Manual Entry */}
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Or enter QR code data manually:
+                Or enter participant details manually:
               </label>
-              <textarea
-                placeholder="Paste QR code data here..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-                onChange={(e) => handleQRScan(e.target.value)}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Staff ID</label>
+                  <input
+                    type="text"
+                    value={manualStaffId}
+                    onChange={(e) => setManualStaffId(e.target.value)}
+                    placeholder="Enter Staff ID"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={manualLastName}
+                    onChange={(e) => setManualLastName(e.target.value)}
+                    placeholder="Enter Last Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleManualEntry}
+                className="mt-3 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700"
+              >
+                Find Participant
+              </button>
             </div>
           </div>
 
@@ -345,16 +410,6 @@ export default function GiftCornerPage() {
             </div>
           )}
 
-          {/* Messages */}
-          {message && (
-            <div className={`p-4 rounded-lg ${
-              messageType === 'success' 
-                ? 'bg-green-100 border border-green-400 text-green-700'
-                : 'bg-red-100 border border-red-400 text-red-700'
-            }`}>
-              {message}
-            </div>
-          )}
         </div>
       </div>
     </div>
