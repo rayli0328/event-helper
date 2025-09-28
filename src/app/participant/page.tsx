@@ -15,6 +15,7 @@ export default function ParticipantPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showProgress, setShowProgress] = useState(false);
 
   const handleGenerateQR = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +27,7 @@ export default function ParticipantPage() {
       // Check if participant already exists
       const existingParticipant = await getParticipantByStaffId(staffId);
       
-      if (existingParticipant) {
+      if (existingParticipant && existingParticipant.lastName.toLowerCase() === lastName.toLowerCase()) {
         // Generate QR code for existing participant
         const qrData: QRCodeData = {
           staffId: existingParticipant.staffId,
@@ -175,10 +176,22 @@ export default function ParticipantPage() {
           )}
         </div>
 
-        {/* Progress Tracker */}
+        {/* Progress Tracker Toggle */}
         {staffId && lastName && (
           <div className="mt-6">
-            <ProgressTracker staffId={staffId} lastName={lastName} />
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <button
+                onClick={() => setShowProgress(!showProgress)}
+                className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 flex items-center justify-center"
+              >
+                {showProgress ? 'Hide' : 'Show'} My Stamp Collection Progress
+              </button>
+            </div>
+            {showProgress && (
+              <div className="mt-4">
+                <ProgressTracker staffId={staffId} lastName={lastName} />
+              </div>
+            )}
           </div>
         )}
 

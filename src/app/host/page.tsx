@@ -7,6 +7,7 @@ import { QRCodeData, Game } from '@/types';
 import { ArrowLeft, Camera, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import QrScanner from 'qr-scanner';
+import ProgressTracker from '@/components/ProgressTracker';
 
 export default function HostPage() {
   const [selectedGame, setSelectedGame] = useState('');
@@ -19,6 +20,7 @@ export default function HostPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [manualStaffId, setManualStaffId] = useState('');
   const [manualLastName, setManualLastName] = useState('');
+  const [showProgress, setShowProgress] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const qrScannerRef = useRef<QrScanner | null>(null);
@@ -247,6 +249,17 @@ export default function HostPage() {
           </p>
         </div>
 
+        {/* Messages at the top */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            messageType === 'success' 
+              ? 'bg-green-100 border border-green-400 text-green-700'
+              : 'bg-red-100 border border-red-400 text-red-700'
+          }`}>
+            {message}
+          </div>
+        )}
+
         <div className="space-y-6">
           {/* Game Selection */}
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -393,19 +406,24 @@ export default function HostPage() {
                   )}
                 </div>
               )}
+
+              {/* Progress Tracker Toggle */}
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowProgress(!showProgress)}
+                  className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700"
+                >
+                  {showProgress ? 'Hide' : 'Show'} Participant's Stamp Collection Progress
+                </button>
+                {showProgress && (
+                  <div className="mt-4">
+                    <ProgressTracker staffId={scannedData.staffId} lastName={scannedData.lastName} />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Messages */}
-          {message && (
-            <div className={`p-4 rounded-lg ${
-              messageType === 'success' 
-                ? 'bg-green-100 border border-green-400 text-green-700'
-                : 'bg-red-100 border border-red-400 text-red-700'
-            }`}>
-              {message}
-            </div>
-          )}
         </div>
       </div>
     </div>
