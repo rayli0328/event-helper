@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getParticipantByStaffId } from '@/lib/database';
+import { getParticipantByStaffId, getActiveGames } from '@/lib/database';
 
 interface ProgressTrackerProps {
   staffId: string;
@@ -11,9 +11,10 @@ interface ProgressTrackerProps {
 export default function ProgressTracker({ staffId, lastName }: ProgressTrackerProps) {
   const [progress, setProgress] = useState({
     completed: 0,
-    total: 6,
+    total: 0,
     completedGames: [] as string[]
   });
+  const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,12 +22,22 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
       if (!staffId || !lastName) return;
       
       try {
+        // Fetch available games first
+        const activeGames = await getActiveGames();
+        setGames(activeGames);
+        
         const participant = await getParticipantByStaffId(staffId);
         if (participant) {
           setProgress({
             completed: participant.completedGames.length,
-            total: 6,
+            total: activeGames.length,
             completedGames: participant.completedGames
+          });
+        } else {
+          setProgress({
+            completed: 0,
+            total: activeGames.length,
+            completedGames: []
           });
         }
       } catch (error) {
@@ -107,51 +118,51 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         </div>
       )}
 
-      {/* Stamp Grid */}
-      <div className="mb-6">
-        <h4 className="text-lg font-semibold text-gray-900 mb-3">
-          Your Booth Stamp Collection
-        </h4>
-        <p className="text-gray-600 text-sm mb-4">
-          Visit all 6 booths to collect unique stamps and unlock your reward.
-        </p>
-        
-        <div className="grid grid-cols-3 gap-4">
-          {Array.from({ length: 6 }, (_, index) => {
-            const boothNumber = index + 1;
-            const isCompleted = progress.completedGames.includes(`game-${boothNumber}`);
-            
-            return (
-              <div 
-                key={boothNumber}
-                className={`border-2 border-dashed rounded-lg p-4 text-center relative ${
-                  isCompleted 
-                    ? 'border-green-400 bg-green-50' 
-                    : 'border-gray-300 bg-gray-50'
-                }`}
-              >
-                <div className="text-xs text-gray-500 absolute top-1 right-1">
-                  B{boothNumber}
+        {/* Stamp Grid */}
+        <div className="mb-6">
+          <h4 className="text-lg font-semibold text-gray-900 mb-3">
+            Your Booth Stamp Collection
+          </h4>
+          <p className="text-gray-600 text-sm mb-4">
+            Visit all {progress.total} booths to collect unique stamps and unlock your reward.
+          </p>
+          
+          <div className={`grid gap-4 ${progress.total <= 3 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            {games.map((game, index) => {
+              const isCompleted = progress.completedGames.includes(game.id);
+              const boothNumber = index + 1;
+              
+              // Define icons for each game
+              const icons = ['⭐', '🏁', '🏆', '❤️', '💎', '👑', '🎯', '🎪', '🎨', '🎭'];
+              const icon = icons[index] || '🎮';
+              
+              return (
+                <div 
+                  key={game.id}
+                  className={`border-2 border-dashed rounded-lg p-4 text-center relative ${
+                    isCompleted 
+                      ? 'border-green-400 bg-green-50' 
+                      : 'border-gray-300 bg-gray-50'
+                  }`}
+                >
+                  <div className="text-xs text-gray-500 absolute top-1 right-1">
+                    B{boothNumber}
+                  </div>
+                  <div className="mt-2">
+                    {isCompleted ? (
+                      <div className="text-2xl">{icon}</div>
+                    ) : (
+                      <div className="text-2xl text-gray-400">{icon}</div>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1 truncate">
+                    {game.name}
+                  </div>
                 </div>
-                <div className="mt-2">
-                  {isCompleted ? (
-                    <div className="text-2xl">✅</div>
-                  ) : (
-                    <div className="text-2xl text-gray-400">
-                      {boothNumber === 1 && '⭐'}
-                      {boothNumber === 2 && '🏁'}
-                      {boothNumber === 3 && '🏆'}
-                      {boothNumber === 4 && '❤️'}
-                      {boothNumber === 5 && '💎'}
-                      {boothNumber === 6 && '👑'}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
 
       {/* Progress Labels */}
       <div className="flex justify-between text-sm text-gray-500">
