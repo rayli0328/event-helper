@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getParticipantByStaffId, getActiveGames } from '@/lib/database';
+import { getParticipantByStaffIdAndLastName, getActiveGames } from '@/lib/database';
+import { RefreshCw } from 'lucide-react';
 
 interface ProgressTrackerProps {
   staffId: string;
@@ -16,43 +17,44 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
   });
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchProgress = async () => {
+    if (!staffId || !lastName) return;
+    
+    try {
+      // Fetch available games first
+      const activeGames = await getActiveGames();
+      setGames(activeGames);
+      
+      const participant = await getParticipantByStaffIdAndLastName(staffId, lastName);
+      if (participant) {
+        setProgress({
+          completed: participant.completedGames.length,
+          total: activeGames.length,
+          completedGames: participant.completedGames
+        });
+      } else {
+        setProgress({
+          completed: 0,
+          total: activeGames.length,
+          completedGames: []
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching progress:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProgress = async () => {
-      if (!staffId || !lastName) return;
-      
-      try {
-        // Fetch available games first
-        const activeGames = await getActiveGames();
-        setGames(activeGames);
-        
-        const participant = await getParticipantByStaffId(staffId);
-        if (participant) {
-          setProgress({
-            completed: participant.completedGames.length,
-            total: activeGames.length,
-            completedGames: participant.completedGames
-          });
-        } else {
-          setProgress({
-            completed: 0,
-            total: activeGames.length,
-            completedGames: []
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching progress:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProgress();
     
-    // Refresh progress every 5 seconds
-    const interval = setInterval(fetchProgress, 5000);
+    // Refresh progress every 2 seconds for real-time updates
+    const interval = setInterval(fetchProgress, 2000);
     return () => clearInterval(interval);
-  }, [staffId, lastName]);
+  }, [staffId, lastName, refreshKey]);
 
   if (loading) {
     return (
@@ -69,9 +71,21 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
-      <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-        Stamp Collection Progress
-      </h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold text-gray-900">
+          Stamp Collection Progress
+        </h3>
+        <button
+          onClick={() => {
+            setRefreshKey(prev => prev + 1);
+            fetchProgress();
+          }}
+          className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Refresh progress"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
       
       {/* Progress Bar */}
       <div className="mb-6">

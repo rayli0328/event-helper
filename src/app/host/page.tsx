@@ -109,6 +109,12 @@ export default function HostPage() {
       setMessage('🎉 Game marked as completed successfully! Participant progress updated!');
       setMessageType('success');
       
+      // Refresh participant data to show updated progress
+      if (scannedData) {
+        const updatedParticipant = await getParticipant(scannedData.participantId);
+        setParticipant(updatedParticipant);
+      }
+      
       // Reset form
       setScannedData(null);
       setParticipant(null);
