@@ -108,7 +108,43 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
     );
   }
 
-  const percentage = Math.round((progress.completed / progress.total) * 100);
+  const percentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+
+  // Show message if no games are available
+  if (progress.total === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-900">
+            Stamp Collection Progress
+          </h3>
+          <button
+            onClick={() => {
+              setRefreshKey(prev => prev + 1);
+              fetchProgress(true); // Force refresh, bypass cache
+            }}
+            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Refresh progress"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="text-center py-8">
+          <div className="text-gray-500 text-lg mb-2">🎮</div>
+          <h4 className="text-lg font-semibold text-gray-700 mb-2">
+            No Games Available
+          </h4>
+          <p className="text-gray-600 mb-4">
+            There are no active games in the system yet.
+          </p>
+          <p className="text-sm text-gray-500">
+            Please contact the event administrator to set up games.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
