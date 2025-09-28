@@ -112,11 +112,11 @@ export default function Home() {
           </Link>
           <br />
           <Link 
-            href="/debug-database"
+            href="/debug-simple"
             className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium"
           >
             <Database className="w-5 h-5 mr-2" />
-            Database Debug
+            Simple Debug
           </Link>
         </div>
 

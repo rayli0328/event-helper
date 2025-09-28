@@ -27,8 +27,6 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
   const fetchProgress = async (forceRefresh = false) => {
     if (!staffId || !lastName) return;
     
-    console.log('🔍 Fetching progress for:', { staffId, lastName });
-    
     // Check cache validity (5 minutes)
     const cacheValid = cacheTimestamp && 
       (Date.now() - cacheTimestamp.getTime()) < 5 * 60 * 1000;
@@ -40,7 +38,6 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         total: cachedGames.length,
         completedGames: cachedParticipant.completedGames
       };
-      console.log('📦 Using cached data:', newProgress);
       setProgress(newProgress);
       setGames(cachedGames);
       setLoading(false);
@@ -49,15 +46,11 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
     
     try {
       // Fetch available games first
-      console.log('🎮 Fetching active games...');
       const activeGames = await getActiveGames();
-      console.log('🎮 Active games found:', activeGames.length, activeGames);
       setGames(activeGames);
       setCachedGames(activeGames);
       
-      console.log('👤 Looking up participant:', { staffId, lastName });
       const participant = await getParticipantByStaffIdAndLastName(staffId, lastName);
-      console.log('👤 Participant found:', participant);
       
       if (participant) {
         const newProgress = {
@@ -65,8 +58,6 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
           total: activeGames.length,
           completedGames: participant.completedGames
         };
-        
-        console.log('📊 Progress calculated:', newProgress);
         
         // Check if progress has increased (new game completed)
         if (newProgress.completed > progress.completed) {
@@ -84,7 +75,6 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         setCachedParticipant(participant);
         setCacheTimestamp(new Date());
       } else {
-        console.log('❌ No participant found');
         setProgress({
           completed: 0,
           total: activeGames.length,
@@ -94,7 +84,7 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         setCacheTimestamp(new Date());
       }
     } catch (error) {
-      console.error('❌ Error fetching progress:', error);
+      console.error('Error fetching progress:', error);
     } finally {
       setLoading(false);
     }
