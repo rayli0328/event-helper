@@ -7,8 +7,9 @@ import { QRCodeData, Game } from '@/types';
 import { ArrowLeft, Camera, Trophy, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import QrScanner from 'qr-scanner';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-export default function GiftCornerPage() {
+function GiftCornerPageContent() {
   const [scannedData, setScannedData] = useState<QRCodeData | null>(null);
   const [participant, setParticipant] = useState<any>(null);
   const [games, setGames] = useState<Game[]>([]);
@@ -485,5 +486,13 @@ export default function GiftCornerPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GiftCornerPage() {
+  return (
+    <ProtectedRoute requiredRole="gift">
+      <GiftCornerPageContent />
+    </ProtectedRoute>
   );
 }

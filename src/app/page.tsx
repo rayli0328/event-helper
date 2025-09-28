@@ -1,16 +1,54 @@
 'use client';
 
 import Link from 'next/link';
-import { QrCode, Users, Trophy, Settings, Database, Plus, Gamepad2 } from 'lucide-react';
+import { QrCode, Users, Trophy, Settings, LogIn, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Event Helper
-          </h1>
+          <div className="flex justify-between items-center mb-4">
+            <div></div>
+            <h1 className="text-4xl font-bold text-gray-900">
+              Event Helper
+            </h1>
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">
+                    {user.email}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="inline-flex items-center text-red-600 hover:text-red-800"
+                  >
+                    <LogOut className="w-4 h-4 mr-1" />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                >
+                  <LogIn className="w-4 h-4 mr-1" />
+                  Login
+                </Link>
+              )}
+            </div>
+          </div>
           <p className="text-xl text-gray-600">
             QR Code Game Management System
           </p>
@@ -78,55 +116,6 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="mt-8 text-center space-y-2">
-          <Link 
-            href="/setup"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
-          >
-            <Database className="w-5 h-5 mr-2" />
-            Database Setup (First Time)
-          </Link>
-          <br />
-          <Link 
-            href="/setup-games"
-            className="inline-flex items-center text-orange-600 hover:text-orange-800 font-medium"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Setup Default Games
-          </Link>
-          <br />
-          <Link 
-            href="/test-qr"
-            className="inline-flex items-center text-green-600 hover:text-green-800 font-medium"
-          >
-            <QrCode className="w-5 h-5 mr-2" />
-            Test QR Code Generator
-          </Link>
-          <br />
-          <Link 
-            href="/debug-json"
-            className="inline-flex items-center text-purple-600 hover:text-purple-800 font-medium"
-          >
-            <QrCode className="w-5 h-5 mr-2" />
-            JSON Data Debug
-          </Link>
-          <br />
-          <Link 
-            href="/debug-simple"
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium"
-          >
-            <Database className="w-5 h-5 mr-2" />
-            Simple Debug
-          </Link>
-          <br />
-          <Link 
-            href="/debug-games"
-            className="inline-flex items-center text-orange-600 hover:text-orange-800 font-medium"
-          >
-            <Gamepad2 className="w-5 h-5 mr-2" />
-            Debug Games
-          </Link>
-        </div>
 
         <div className="mt-12 text-center">
           <p className="text-gray-500 text-sm">

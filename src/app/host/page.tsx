@@ -8,8 +8,9 @@ import { ArrowLeft, Camera, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import QrScanner from 'qr-scanner';
 import ProgressTracker from '@/components/ProgressTracker';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-export default function HostPage() {
+function HostPageContent() {
   const [selectedGame, setSelectedGame] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [scannedData, setScannedData] = useState<QRCodeData | null>(null);
@@ -447,5 +448,13 @@ export default function HostPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function HostPage() {
+  return (
+    <ProtectedRoute requiredRole="host">
+      <HostPageContent />
+    </ProtectedRoute>
   );
 }

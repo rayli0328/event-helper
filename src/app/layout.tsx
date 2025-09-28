@@ -1,26 +1,27 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { AuthProvider } from '@/contexts/AuthContext';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Event Helper - QR Code Game Management',
-  description: 'Manage event games with QR codes for participants and hosts',
-}
+  title: 'Event Helper',
+  description: 'QR Code Game Management System',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <AuthProvider>
           {children}
-        </div>
+        </AuthProvider>
       </body>
     </html>
-  )
+  );
 }

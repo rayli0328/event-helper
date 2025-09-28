@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import { createGame, getGames, createGameHost, getGameHosts, deleteGame } from '@/lib/database';
 import { Game, GameHost } from '@/types';
-import { ArrowLeft, Plus, Settings, Users, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, Users, Trash2, Database, QrCode, Gamepad2 } from 'lucide-react';
 import Link from 'next/link';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-export default function AdminPage() {
+function AdminPageContent() {
   const [games, setGames] = useState<Game[]>([]);
   const [hosts, setHosts] = useState<GameHost[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
-  const [activeTab, setActiveTab] = useState<'games' | 'hosts'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'hosts' | 'debug'>('games');
 
   // Game form state
   const [gameForm, setGameForm] = useState({
@@ -153,6 +154,17 @@ export default function AdminPage() {
             >
               <Users className="w-5 h-5 inline mr-2" />
               Game Hosts
+            </button>
+            <button
+              onClick={() => setActiveTab('debug')}
+              className={`px-6 py-3 font-medium ${
+                activeTab === 'debug'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Settings className="w-5 h-5 inline mr-2" />
+              Debug Tools
             </button>
           </div>
         </div>
@@ -335,6 +347,88 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Debug Tools Tab */}
+        {activeTab === 'debug' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Debug Tools
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Development and debugging utilities for system maintenance
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Link 
+                  href="/setup"
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center mb-2">
+                    <Database className="w-5 h-5 text-blue-600 mr-2" />
+                    <h3 className="font-medium text-gray-900">Database Setup</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">First-time database initialization</p>
+                </Link>
+
+                <Link 
+                  href="/setup-games"
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center mb-2">
+                    <Plus className="w-5 h-5 text-orange-600 mr-2" />
+                    <h3 className="font-medium text-gray-900">Setup Default Games</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">Create sample games for testing</p>
+                </Link>
+
+                <Link 
+                  href="/test-qr"
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center mb-2">
+                    <QrCode className="w-5 h-5 text-green-600 mr-2" />
+                    <h3 className="font-medium text-gray-900">Test QR Generator</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">Test QR code generation</p>
+                </Link>
+
+                <Link 
+                  href="/debug-json"
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center mb-2">
+                    <QrCode className="w-5 h-5 text-purple-600 mr-2" />
+                    <h3 className="font-medium text-gray-900">JSON Data Debug</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">Debug JSON data format</p>
+                </Link>
+
+                <Link 
+                  href="/debug-simple"
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center mb-2">
+                    <Database className="w-5 h-5 text-indigo-600 mr-2" />
+                    <h3 className="font-medium text-gray-900">Simple Debug</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">Basic connection testing</p>
+                </Link>
+
+                <Link 
+                  href="/debug-games"
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center mb-2">
+                    <Gamepad2 className="w-5 h-5 text-orange-600 mr-2" />
+                    <h3 className="font-medium text-gray-900">Debug Games</h3>
+                  </div>
+                  <p className="text-sm text-gray-600">Inspect games database</p>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Messages */}
         {message && (
           <div className={`p-4 rounded-lg ${
@@ -347,5 +441,13 @@ export default function AdminPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <ProtectedRoute requiredRole="admin">
+      <AdminPageContent />
+    </ProtectedRoute>
   );
 }
