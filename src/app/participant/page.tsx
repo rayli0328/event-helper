@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { generateQRCode, downloadQRCode } from '@/lib/qrCode';
-import { createParticipant, getParticipantByStaffId } from '@/lib/database';
+import { createParticipant, getParticipantByStaffIdAndLastName } from '@/lib/database';
 import { QRCodeData } from '@/types';
 import { ArrowLeft, Download, QrCode } from 'lucide-react';
 import Link from 'next/link';
@@ -24,10 +24,10 @@ export default function ParticipantPage() {
     setSuccess('');
 
     try {
-      // Check if participant already exists
-      const existingParticipant = await getParticipantByStaffId(staffId);
+      // Check if participant already exists (both staff ID and last name must match)
+      const existingParticipant = await getParticipantByStaffIdAndLastName(staffId, lastName);
       
-      if (existingParticipant && existingParticipant.lastName.toLowerCase() === lastName.toLowerCase()) {
+      if (existingParticipant) {
         // Generate QR code for existing participant
         const qrData: QRCodeData = {
           staffId: existingParticipant.staffId,
@@ -36,9 +36,9 @@ export default function ParticipantPage() {
         };
         const qrUrl = await generateQRCode(qrData);
         setQrCodeUrl(qrUrl);
-        setSuccess('QR code generated for existing participant!');
+        setSuccess('✅ QR code generated for existing participant! Your progress is preserved.');
       } else {
-        // Create new participant
+        // Create new participant only if no matching participant exists
         const participantId = await createParticipant({
           staffId,
           lastName,
@@ -53,7 +53,7 @@ export default function ParticipantPage() {
         };
         const qrUrl = await generateQRCode(qrData);
         setQrCodeUrl(qrUrl);
-        setSuccess('New participant created and QR code generated!');
+        setSuccess('🎉 New participant created and QR code generated!');
       }
     } catch (err) {
       setError('Failed to generate QR code. Please try again.');
