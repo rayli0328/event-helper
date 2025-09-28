@@ -45,18 +45,20 @@ export const getParticipantByStaffId = async (staffId: string) => {
 };
 
 export const getParticipantByStaffIdAndLastName = async (staffId: string, lastName: string) => {
-  // Optimized query with compound where clause
-  const q = query(
-    collection(db, 'participants'), 
-    where('staffId', '==', staffId),
-    where('lastName', '==', lastName)
-  );
+  // Get all participants and filter case-insensitively
+  // Note: Firestore doesn't support case-insensitive queries directly
+  const q = query(collection(db, 'participants'));
   const querySnapshot = await getDocs(q);
-  if (!querySnapshot.empty) {
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as Participant;
-  }
-  return null;
+  
+  // Filter participants with case-insensitive matching
+  const participants = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Participant));
+  
+  const matchingParticipant = participants.find(participant => 
+    participant.staffId.toLowerCase() === staffId.toLowerCase() &&
+    participant.lastName.toLowerCase() === lastName.toLowerCase()
+  );
+  
+  return matchingParticipant || null;
 };
 
 export const updateParticipantGames = async (participantId: string, gameId: string) => {
