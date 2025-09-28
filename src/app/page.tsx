@@ -110,6 +110,14 @@ export default function Home() {
             <QrCode className="w-5 h-5 mr-2" />
             JSON Data Debug
           </Link>
+          <br />
+          <Link 
+            href="/debug-database"
+            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium"
+          >
+            <Database className="w-5 h-5 mr-2" />
+            Database Debug
+          </Link>
         </div>
 
         <div className="mt-12 text-center">
