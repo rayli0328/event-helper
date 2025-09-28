@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { parseQRCode } from '@/lib/qrCode';
-import { getParticipant, updateParticipantGames, createGameCompletion, getActiveGames } from '@/lib/database';
+import { getParticipant, updateParticipantGames, createGameCompletion, getActiveGames, getParticipantByStaffId } from '@/lib/database';
 import { QRCodeData, Game } from '@/types';
 import { ArrowLeft, Camera, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -17,6 +17,8 @@ export default function HostPage() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
   const [isScanning, setIsScanning] = useState(false);
+  const [manualStaffId, setManualStaffId] = useState('');
+  const [manualLastName, setManualLastName] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const qrScannerRef = useRef<QrScanner | null>(null);
@@ -102,7 +104,7 @@ export default function HostPage() {
         hostId: 'current-host', // In real app, get from auth
       });
 
-      setMessage('Game marked as completed successfully!');
+      setMessage('🎉 Game marked as completed successfully! Participant progress updated!');
       setMessageType('success');
       
       // Reset form
@@ -190,6 +192,36 @@ export default function HostPage() {
     setMessageType('success');
   };
 
+  const handleManualEntry = async () => {
+    if (!manualStaffId.trim() || !manualLastName.trim()) {
+      setMessage('Please enter both Staff ID and Last Name');
+      setMessageType('error');
+      return;
+    }
+
+    try {
+      // Find participant by staff ID
+      const participantData = await getParticipantByStaffId(manualStaffId);
+      if (participantData && participantData.lastName.toLowerCase() === manualLastName.toLowerCase()) {
+        const qrData: QRCodeData = {
+          staffId: manualStaffId,
+          lastName: manualLastName,
+          participantId: participantData.id,
+        };
+        setScannedData(qrData);
+        setParticipant(participantData);
+        setMessage('Participant found successfully!');
+        setMessageType('success');
+      } else {
+        setMessage('Participant not found. Please check Staff ID and Last Name.');
+        setMessageType('error');
+      }
+    } catch (error) {
+      setMessage('Error finding participant. Please try again.');
+      setMessageType('error');
+    }
+  };
+
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-2xl mx-auto">
@@ -264,20 +296,50 @@ export default function HostPage() {
                   style={{ display: isScanning ? 'block' : 'none' }}
                 />
                 <canvas ref={canvasRef} className="hidden" />
+                {isScanning && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black bg-opacity-50 text-white p-4 rounded-lg text-center">
+                      <p className="text-sm font-semibold">Position QR code within the scanning area</p>
+                      <p className="text-xs mt-1">Hold steady for best results</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Manual QR Input */}
+            {/* Manual Entry */}
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Or enter QR code data manually:
+                Or enter participant details manually:
               </label>
-              <textarea
-                placeholder="Paste QR code data here..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-                onChange={(e) => handleQRScan(e.target.value)}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Staff ID</label>
+                  <input
+                    type="text"
+                    value={manualStaffId}
+                    onChange={(e) => setManualStaffId(e.target.value)}
+                    placeholder="Enter Staff ID"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={manualLastName}
+                    onChange={(e) => setManualLastName(e.target.value)}
+                    placeholder="Enter Last Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleManualEntry}
+                className="mt-3 w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700"
+              >
+                Find Participant
+              </button>
             </div>
           </div>
 

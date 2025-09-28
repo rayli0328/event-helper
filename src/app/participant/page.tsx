@@ -6,6 +6,7 @@ import { createParticipant, getParticipantByStaffId } from '@/lib/database';
 import { QRCodeData } from '@/types';
 import { ArrowLeft, Download, QrCode } from 'lucide-react';
 import Link from 'next/link';
+import ProgressTracker from '@/components/ProgressTracker';
 
 export default function ParticipantPage() {
   const [staffId, setStaffId] = useState('');
@@ -79,10 +80,10 @@ export default function ParticipantPage() {
             Back to Home
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Generate Your QR Code
+            Welcome to <span className="text-blue-600">Event Name Placeholder</span>
           </h1>
-          <p className="text-gray-600">
-            Enter your staff ID and last name to generate your unique QR code
+          <p className="text-gray-600 text-lg">
+            Start your stamp collection journey
           </p>
         </div>
 
@@ -172,6 +173,49 @@ export default function ParticipantPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Progress Tracker */}
+        {staffId && lastName && (
+          <div className="mt-6">
+            <ProgressTracker staffId={staffId} lastName={lastName} />
+          </div>
+        )}
+
+        {/* How it Works Instructions */}
+        <div className="mt-6 bg-blue-50 rounded-xl p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+            How it works
+          </h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto mb-3">
+                1
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Register</h4>
+              <p className="text-sm text-gray-600">
+                Enter your Staff ID and last name
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto mb-3">
+                2
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Show QR Code</h4>
+              <p className="text-sm text-gray-600">
+                Present your QR code to our helper at stations
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto mb-3">
+                3
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Collect & Win</h4>
+              <p className="text-sm text-gray-600">
+                Gather stamps to earn your amazing reward!
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
