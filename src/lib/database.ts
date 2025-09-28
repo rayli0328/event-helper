@@ -5,6 +5,7 @@ import {
   getDoc, 
   getDocs, 
   updateDoc, 
+  deleteDoc,
   query, 
   where, 
   orderBy,
@@ -70,6 +71,11 @@ export const getActiveGames = async () => {
   const q = query(collection(db, 'games'), where('isActive', '==', true));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
+};
+
+export const deleteGame = async (gameId: string) => {
+  const docRef = doc(db, 'games', gameId);
+  await deleteDoc(docRef);
 };
 
 // Game Completions

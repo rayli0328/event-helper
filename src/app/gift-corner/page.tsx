@@ -85,7 +85,7 @@ export default function GiftCornerPage() {
   const startCamera = async () => {
     try {
       // Wait a moment for the video element to be rendered
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       if (!videoRef.current) {
         setMessage('Video element not found. Please try again.');
@@ -104,6 +104,12 @@ export default function GiftCornerPage() {
       // Stop any existing scanner
       if (qrScannerRef.current) {
         qrScannerRef.current.destroy();
+        qrScannerRef.current = null;
+      }
+
+      // Ensure video element is visible
+      if (videoRef.current) {
+        videoRef.current.style.display = 'block';
       }
 
       // Create new QR scanner with mobile-friendly settings
@@ -220,9 +226,24 @@ export default function GiftCornerPage() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-64 bg-gray-100 rounded-lg"
-                  style={{ display: isScanning ? 'block' : 'none' }}
+                  className={`w-full h-64 bg-gray-100 rounded-lg ${isScanning ? 'block' : 'hidden'}`}
                 />
+                {isScanning && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black bg-opacity-50 text-white p-4 rounded-lg text-center">
+                      <p className="text-sm font-semibold">Position QR code within the scanning area</p>
+                      <p className="text-xs mt-1">Hold steady for best results</p>
+                    </div>
+                  </div>
+                )}
+                {!isScanning && (
+                  <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="text-gray-500 text-center">
+                      <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Camera will appear here when started</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

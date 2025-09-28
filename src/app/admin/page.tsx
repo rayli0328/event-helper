@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createGame, getGames, createGameHost, getGameHosts } from '@/lib/database';
+import { createGame, getGames, createGameHost, getGameHosts, deleteGame } from '@/lib/database';
 import { Game, GameHost } from '@/types';
-import { ArrowLeft, Plus, Settings, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, Users, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminPage() {
@@ -85,6 +85,25 @@ export default function AdminPage() {
       loadData();
     } catch (error) {
       setMessage('Failed to create game host');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteGame = async (gameId: string, gameName: string) => {
+    if (!confirm(`Are you sure you want to delete "${gameName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await deleteGame(gameId);
+      setMessage(`Game "${gameName}" deleted successfully!`);
+      setMessageType('success');
+      loadData();
+    } catch (error) {
+      setMessage('Failed to delete game');
       setMessageType('error');
     } finally {
       setLoading(false);
@@ -199,7 +218,7 @@ export default function AdminPage() {
                 {games.map((game) => (
                   <div key={game.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex justify-between items-start">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-medium text-gray-900">{game.name}</h3>
                         <p className="text-sm text-gray-600">{game.description}</p>
                         <span className={`inline-block px-2 py-1 text-xs rounded-full ${
@@ -210,6 +229,14 @@ export default function AdminPage() {
                           {game.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
+                      <button
+                        onClick={() => handleDeleteGame(game.id, game.name)}
+                        disabled={loading}
+                        className="ml-4 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Delete game"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
