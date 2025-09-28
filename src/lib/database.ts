@@ -9,6 +9,7 @@ import {
   query, 
   where, 
   orderBy,
+  writeBatch,
   Timestamp 
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -43,15 +44,16 @@ export const getParticipantByStaffId = async (staffId: string) => {
 };
 
 export const getParticipantByStaffIdAndLastName = async (staffId: string, lastName: string) => {
-  const q = query(collection(db, 'participants'), where('staffId', '==', staffId));
+  // Optimized query with compound where clause
+  const q = query(
+    collection(db, 'participants'), 
+    where('staffId', '==', staffId),
+    where('lastName', '==', lastName)
+  );
   const querySnapshot = await getDocs(q);
   if (!querySnapshot.empty) {
     const doc = querySnapshot.docs[0];
-    const participant = { id: doc.id, ...doc.data() } as Participant;
-    // Check if last name matches (case insensitive)
-    if (participant.lastName.toLowerCase() === lastName.toLowerCase()) {
-      return participant;
-    }
+    return { id: doc.id, ...doc.data() } as Participant;
   }
   return null;
 };
@@ -66,6 +68,37 @@ export const updateParticipantGames = async (participantId: string, gameId: stri
       await updateDoc(docRef, {
         completedGames: updatedGames,
       });
+    }
+  }
+};
+
+export const batchUpdateParticipantGames = async (participantId: string, gameIds: string[]) => {
+  const participant = await getParticipant(participantId);
+  if (participant) {
+    const batch = writeBatch(db);
+    
+    // Filter out already completed games
+    const newGames = gameIds.filter(gameId => !participant.completedGames.includes(gameId));
+    
+    if (newGames.length > 0) {
+      const updatedGames = [...participant.completedGames, ...newGames];
+      const participantRef = doc(db, 'participants', participantId);
+      batch.update(participantRef, {
+        completedGames: updatedGames,
+      });
+      
+      // Create game completion records for each new game
+      newGames.forEach(gameId => {
+        const completionRef = doc(collection(db, 'gameCompletions'));
+        batch.set(completionRef, {
+          participantId,
+          gameId,
+          hostId: 'batch-update',
+          completedAt: Timestamp.now(),
+        });
+      });
+      
+      await batch.commit();
     }
   }
 };
@@ -85,7 +118,12 @@ export const getGames = async () => {
 };
 
 export const getActiveGames = async () => {
-  const q = query(collection(db, 'games'), where('isActive', '==', true));
+  // Optimized query with specific where clause and ordering
+  const q = query(
+    collection(db, 'games'), 
+    where('isActive', '==', true),
+    orderBy('createdAt', 'asc')
+  );
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Game));
 };
@@ -105,6 +143,7 @@ export const createGameCompletion = async (completion: Omit<GameCompletion, 'id'
 };
 
 export const getParticipantCompletions = async (participantId: string) => {
+  // Optimized query with specific where clause and ordering
   const q = query(
     collection(db, 'gameCompletions'), 
     where('participantId', '==', participantId),

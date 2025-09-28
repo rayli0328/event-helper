@@ -20,14 +20,35 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [newlyCompleted, setNewlyCompleted] = useState<string[]>([]);
+  const [cachedParticipant, setCachedParticipant] = useState<any>(null);
+  const [cachedGames, setCachedGames] = useState<any[]>([]);
+  const [cacheTimestamp, setCacheTimestamp] = useState<Date | null>(null);
 
-  const fetchProgress = async () => {
+  const fetchProgress = async (forceRefresh = false) => {
     if (!staffId || !lastName) return;
+    
+    // Check cache validity (5 minutes)
+    const cacheValid = cacheTimestamp && 
+      (Date.now() - cacheTimestamp.getTime()) < 5 * 60 * 1000;
+    
+    if (!forceRefresh && cacheValid && cachedParticipant && cachedGames.length > 0) {
+      // Use cached data
+      const newProgress = {
+        completed: cachedParticipant.completedGames.length,
+        total: cachedGames.length,
+        completedGames: cachedParticipant.completedGames
+      };
+      setProgress(newProgress);
+      setGames(cachedGames);
+      setLoading(false);
+      return;
+    }
     
     try {
       // Fetch available games first
       const activeGames = await getActiveGames();
       setGames(activeGames);
+      setCachedGames(activeGames);
       
       const participant = await getParticipantByStaffIdAndLastName(staffId, lastName);
       if (participant) {
@@ -50,12 +71,16 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         }
         
         setProgress(newProgress);
+        setCachedParticipant(participant);
+        setCacheTimestamp(new Date());
       } else {
         setProgress({
           completed: 0,
           total: activeGames.length,
           completedGames: []
         });
+        setCachedParticipant(null);
+        setCacheTimestamp(new Date());
       }
     } catch (error) {
       console.error('Error fetching progress:', error);
@@ -67,8 +92,8 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
   useEffect(() => {
     fetchProgress();
     
-    // Refresh progress every 2 seconds for real-time updates
-    const interval = setInterval(fetchProgress, 2000);
+    // Refresh progress every 5 seconds for better performance
+    const interval = setInterval(fetchProgress, 5000);
     return () => clearInterval(interval);
   }, [staffId, lastName, refreshKey]);
 
@@ -94,7 +119,7 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         <button
           onClick={() => {
             setRefreshKey(prev => prev + 1);
-            fetchProgress();
+            fetchProgress(true); // Force refresh, bypass cache
           }}
           className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
           title="Refresh progress"
