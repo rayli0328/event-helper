@@ -44,6 +44,7 @@ export default function ParticipantPage() {
           lastName,
           qrCode: '', // Will be generated
           completedGames: [],
+          giftRedeemed: false,
         });
 
         const qrData: QRCodeData = {
