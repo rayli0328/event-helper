@@ -246,7 +246,7 @@ function GiftCornerPageContent() {
                 Gift Corner
               </h1>
               <p className="text-gray-600">
-                Verify games completed and give gifts
+                Verify all games completed and give gifts
               </p>
         </div>
 

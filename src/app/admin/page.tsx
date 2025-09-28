@@ -6,8 +6,10 @@ import { Game, GameHost } from '@/types';
 import { ArrowLeft, Plus, Settings, Users, Trash2, Database, QrCode, Gamepad2 } from 'lucide-react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useConfig } from '@/contexts/ConfigContext';
 
 function AdminPageContent() {
+  const { eventName, eventDescription, updateConfig } = useConfig();
   const [games, setGames] = useState<Game[]>([]);
   const [hosts, setHosts] = useState<GameHost[]>([]);
   const [loading, setLoading] = useState(false);
@@ -22,10 +24,10 @@ function AdminPageContent() {
     hostId: '',
   });
 
-  // Configuration state
-  const [config, setConfig] = useState({
-    eventName: 'Event Name Placeholder',
-    eventDescription: 'Start your stamp collection journey',
+  // Local configuration state for form
+  const [configForm, setConfigForm] = useState({
+    eventName: eventName,
+    eventDescription: eventDescription,
   });
 
   // Host form state
@@ -382,8 +384,8 @@ function AdminPageContent() {
                   </label>
                   <input
                     type="text"
-                    value={config.eventName}
-                    onChange={(e) => setConfig({ ...config, eventName: e.target.value })}
+                    value={configForm.eventName}
+                    onChange={(e) => setConfigForm({ ...configForm, eventName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter event name"
                   />
@@ -398,8 +400,8 @@ function AdminPageContent() {
                   </label>
                   <input
                     type="text"
-                    value={config.eventDescription}
-                    onChange={(e) => setConfig({ ...config, eventDescription: e.target.value })}
+                    value={configForm.eventDescription}
+                    onChange={(e) => setConfigForm({ ...configForm, eventDescription: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter event description"
                   />
@@ -410,7 +412,7 @@ function AdminPageContent() {
 
                 <button
                   onClick={() => {
-                    // In a real app, you'd save this to a database
+                    updateConfig(configForm.eventName, configForm.eventDescription);
                     setMessage('Configuration saved successfully!');
                     setMessageType('success');
                   }}

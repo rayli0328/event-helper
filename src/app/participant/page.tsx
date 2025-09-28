@@ -7,8 +7,10 @@ import { QRCodeData } from '@/types';
 import { ArrowLeft, Download, QrCode } from 'lucide-react';
 import Link from 'next/link';
 import ProgressTracker from '@/components/ProgressTracker';
+import { useConfig } from '@/contexts/ConfigContext';
 
 export default function ParticipantPage() {
+  const { eventName, eventDescription } = useConfig();
   const [staffId, setStaffId] = useState('');
   const [lastName, setLastName] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
@@ -75,10 +77,10 @@ export default function ParticipantPage() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to <span className="text-blue-600">Event Name Placeholder</span>
+            Welcome to <span className="text-blue-600">{eventName}</span>
           </h1>
           <p className="text-gray-600 text-lg">
-            Start your stamp collection journey
+            {eventDescription}
           </p>
         </div>
 
