@@ -546,6 +546,7 @@ function AdminPageContent() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Games Completed</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gift Status</th>
                         </tr>
                       </thead>
@@ -569,6 +570,20 @@ function AdminPageContent() {
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
                                 {participant.completedGames}/{participant.totalGames} games
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <div className="space-y-1">
+                                {participant.gameStatus?.map((game: any, gameIndex: number) => (
+                                  <div key={gameIndex} className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${game.isCompleted ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                    <span className={`text-xs ${game.isCompleted ? 'text-green-700' : 'text-gray-500'}`}>
+                                      {game.gameName}
+                                    </span>
+                                  </div>
+                                )) || (
+                                  <span className="text-xs text-gray-500">No games available</span>
+                                )}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm">

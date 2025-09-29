@@ -57,17 +57,29 @@ export const exportParticipantReport = (reportData: any) => {
     { Metric: 'Average Completion %', Value: `${summary.averageCompletion}%` },
   ];
   
-  // Create participant data with formatted dates
-  const participantData = participants.map((p: any) => ({
-    'Staff ID': p.staffId,
-    'Last Name': p.lastName,
-    'Registration Date': p.createdAt.toLocaleDateString(),
-    'Completed Games': p.completedGames,
-    'Total Games': p.totalGames,
-    'Completion %': `${p.completionPercentage}%`,
-    'Gift Redeemed': p.giftRedeemed ? 'Yes' : 'No',
-    'Gift Redeemed Date': p.giftRedeemedAt ? p.giftRedeemedAt.toLocaleDateString() : 'N/A',
-  }));
+  // Create participant data with formatted dates and game details
+  const participantData = participants.map((p: any) => {
+    const baseData = {
+      'Staff ID': p.staffId,
+      'Last Name': p.lastName,
+      'Registration Date': p.createdAt.toLocaleDateString(),
+      'Completed Games': p.completedGames,
+      'Total Games': p.totalGames,
+      'Completion %': `${p.completionPercentage}%`,
+      'Gift Redeemed': p.giftRedeemed ? 'Yes' : 'No',
+      'Gift Redeemed Date': p.giftRedeemedAt ? p.giftRedeemedAt.toLocaleDateString() : 'N/A',
+    };
+
+    // Add individual game status columns
+    const gameColumns: any = {};
+    if (p.gameStatus && p.gameStatus.length > 0) {
+      p.gameStatus.forEach((game: any, index: number) => {
+        gameColumns[`Game ${index + 1}: ${game.gameName}`] = game.isCompleted ? 'Completed' : 'Not Completed';
+      });
+    }
+
+    return { ...baseData, ...gameColumns };
+  });
   
   // Export summary first
   exportToExcel(summaryData, 'event-summary');

@@ -327,6 +327,15 @@ export const getParticipantReport = async () => {
         const totalGames = games.length;
         const completionPercentage = totalGames > 0 ? Math.round((completedGamesCount / totalGames) * 100) : 0;
         
+        // Create detailed game status for this participant
+        const gameStatus = games.map(game => ({
+          gameId: game.id,
+          gameName: game.name,
+          gameDescription: game.description,
+          isCompleted: participant.completedGames?.includes(game.id) || false,
+          completedAt: participant.completedGames?.includes(game.id) ? new Date() : null, // We don't store completion timestamps, so using current date as placeholder
+        }));
+
         return {
           staffId: participant.staffId,
           lastName: participant.lastName,
@@ -341,6 +350,7 @@ export const getParticipantReport = async () => {
             ? (redemption.redeemedAt as any).toDate()
             : (redemption?.redeemedAt || null),
           completedGameIds: participant.completedGames || [],
+          gameStatus: gameStatus, // Detailed game completion status
         };
       } catch (participantError) {
         console.error(`Error processing participant ${index}:`, participantError);
@@ -355,6 +365,13 @@ export const getParticipantReport = async () => {
           giftRedeemed: false,
           giftRedeemedAt: null,
           completedGameIds: [],
+          gameStatus: games.map(game => ({
+            gameId: game.id,
+            gameName: game.name,
+            gameDescription: game.description,
+            isCompleted: false,
+            completedAt: null,
+          })),
         };
       }
     });
