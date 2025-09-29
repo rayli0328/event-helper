@@ -27,9 +27,9 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
   const fetchProgress = async (forceRefresh = false) => {
     if (!staffId || !lastName) return;
     
-    // Check cache validity (5 minutes)
+    // Check cache validity (10 minutes) - but always refresh if forceRefresh is true
     const cacheValid = cacheTimestamp && 
-      (Date.now() - cacheTimestamp.getTime()) < 5 * 60 * 1000;
+      (Date.now() - cacheTimestamp.getTime()) < 10 * 60 * 1000;
     
     if (!forceRefresh && cacheValid && cachedParticipant && cachedGames.length > 0) {
       // Use cached data
@@ -45,7 +45,9 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
     }
     
     try {
-      // Fetch available games first
+      setLoading(true);
+      
+      // Always fetch fresh data when forceRefresh is true
       const activeGames = await getActiveGames();
       setGames(activeGames);
       setCachedGames(activeGames);
@@ -75,11 +77,12 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         setCachedParticipant(participant);
         setCacheTimestamp(new Date());
       } else {
-        setProgress({
+        const newProgress = {
           completed: 0,
           total: activeGames.length,
           completedGames: []
-        });
+        };
+        setProgress(newProgress);
         setCachedParticipant(null);
         setCacheTimestamp(new Date());
       }
@@ -92,10 +95,8 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
 
   useEffect(() => {
     fetchProgress();
-    
-    // Refresh progress every 5 seconds for better performance
-    const interval = setInterval(fetchProgress, 5000);
-    return () => clearInterval(interval);
+    // Removed auto-refresh to reduce traffic and improve performance for concurrent users
+    // Users can manually refresh using the refresh button when needed
   }, [staffId, lastName, refreshKey]);
 
   if (loading) {
@@ -122,12 +123,18 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
           <button
             onClick={() => {
               setRefreshKey(prev => prev + 1);
+              // Clear cache to ensure fresh data
+              setCachedParticipant(null);
+              setCachedGames([]);
+              setCacheTimestamp(null);
               fetchProgress(true); // Force refresh, bypass cache
             }}
-            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh progress"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="text-sm">{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
         
@@ -156,12 +163,18 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
         <button
           onClick={() => {
             setRefreshKey(prev => prev + 1);
+            // Clear cache to ensure fresh data
+            setCachedParticipant(null);
+            setCachedGames([]);
+            setCacheTimestamp(null);
             fetchProgress(true); // Force refresh, bypass cache
           }}
-          className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           title="Refresh progress"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <span className="text-sm">{loading ? 'Refreshing...' : 'Refresh'}</span>
         </button>
       </div>
       
@@ -169,7 +182,14 @@ export default function ProgressTracker({ staffId, lastName }: ProgressTrackerPr
       <div className="mb-6">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>{progress.completed}/{progress.total}</span>
-          <span>{percentage}%</span>
+          <div className="flex items-center gap-2">
+            <span>{percentage}%</span>
+            {lastUpdate && (
+              <span className="text-xs text-gray-500">
+                Updated: {lastUpdate.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div 
