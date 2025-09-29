@@ -303,9 +303,15 @@ export const getAllParticipants = async () => {
 
 export const getParticipantReport = async () => {
   try {
+    console.log('Starting report generation...');
     const participants = await getAllParticipants();
+    console.log('Participants loaded:', participants.length);
+    
     const games = await getActiveGames();
+    console.log('Games loaded:', games.length);
+    
     const giftRedemptions = await getGiftRedemptions();
+    console.log('Gift redemptions loaded:', giftRedemptions.length);
     
     // Create a map of gift redemptions for quick lookup
     const redemptionMap = new Map();
@@ -313,25 +319,43 @@ export const getParticipantReport = async () => {
       redemptionMap.set(redemption.participantId, redemption);
     });
     
-    // Create report data
-    const reportData = participants.map(participant => {
-      const redemption = redemptionMap.get(participant.id);
-      const completedGamesCount = participant.completedGames?.length || 0;
-      const totalGames = games.length;
-      const completionPercentage = totalGames > 0 ? Math.round((completedGamesCount / totalGames) * 100) : 0;
-      
-      return {
-        staffId: participant.staffId,
-        lastName: participant.lastName,
-        createdAt: participant.createdAt || new Date(),
-        completedGames: completedGamesCount,
-        totalGames: totalGames,
-        completionPercentage: completionPercentage,
-        giftRedeemed: participant.giftRedeemed || false,
-        giftRedeemedAt: redemption?.redeemedAt || null,
-        completedGameIds: participant.completedGames || [],
-      };
+    // Create report data with error handling for each participant
+    const reportData = participants.map((participant, index) => {
+      try {
+        const redemption = redemptionMap.get(participant.id);
+        const completedGamesCount = participant.completedGames?.length || 0;
+        const totalGames = games.length;
+        const completionPercentage = totalGames > 0 ? Math.round((completedGamesCount / totalGames) * 100) : 0;
+        
+        return {
+          staffId: participant.staffId,
+          lastName: participant.lastName,
+          createdAt: participant.createdAt?.toDate ? participant.createdAt.toDate() : (participant.createdAt || new Date()),
+          completedGames: completedGamesCount,
+          totalGames: totalGames,
+          completionPercentage: completionPercentage,
+          giftRedeemed: participant.giftRedeemed || false,
+          giftRedeemedAt: redemption?.redeemedAt?.toDate ? redemption.redeemedAt.toDate() : (redemption?.redeemedAt || null),
+          completedGameIds: participant.completedGames || [],
+        };
+      } catch (participantError) {
+        console.error(`Error processing participant ${index}:`, participantError);
+        // Return a safe fallback for this participant
+        return {
+          staffId: participant.staffId || 'Unknown',
+          lastName: participant.lastName || 'Unknown',
+          createdAt: new Date(),
+          completedGames: 0,
+          totalGames: games.length,
+          completionPercentage: 0,
+          giftRedeemed: false,
+          giftRedeemedAt: null,
+          completedGameIds: [],
+        };
+      }
     });
+    
+    console.log('Report data generated:', reportData.length, 'participants');
     
     return {
       participants: reportData,
@@ -347,6 +371,6 @@ export const getParticipantReport = async () => {
     };
   } catch (error) {
     console.error('Error generating participant report:', error);
-    throw error;
+    throw new Error(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

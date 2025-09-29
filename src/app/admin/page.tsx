@@ -128,10 +128,15 @@ function AdminPageContent() {
   const loadReport = async () => {
     try {
       setReportLoading(true);
+      setMessage('');
+      setMessageType('');
       const data = await getParticipantReport();
       setReportData(data);
+      setMessage('Report loaded successfully!');
+      setMessageType('success');
     } catch (error) {
-      setMessage('Error loading report. Please try again.');
+      console.error('Error loading report:', error);
+      setMessage(`Error loading report: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setMessageType('error');
     } finally {
       setReportLoading(false);
