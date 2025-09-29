@@ -278,7 +278,7 @@ export const updateConfiguration = async (eventName: string, eventDescription: s
       eventDescription,
       updatedAt: Timestamp.now(),
     });
-  } catch (error) {
+  } catch (error: any) {
     // If document doesn't exist, create it
     if (error.code === 'not-found') {
       const configRef = doc(db, 'configuration', 'event');
