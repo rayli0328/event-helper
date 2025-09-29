@@ -330,12 +330,16 @@ export const getParticipantReport = async () => {
         return {
           staffId: participant.staffId,
           lastName: participant.lastName,
-          createdAt: participant.createdAt?.toDate ? participant.createdAt.toDate() : (participant.createdAt || new Date()),
+          createdAt: (participant.createdAt && typeof participant.createdAt === 'object' && 'toDate' in participant.createdAt) 
+            ? (participant.createdAt as any).toDate() 
+            : (participant.createdAt || new Date()),
           completedGames: completedGamesCount,
           totalGames: totalGames,
           completionPercentage: completionPercentage,
           giftRedeemed: participant.giftRedeemed || false,
-          giftRedeemedAt: redemption?.redeemedAt?.toDate ? redemption.redeemedAt.toDate() : (redemption?.redeemedAt || null),
+          giftRedeemedAt: (redemption?.redeemedAt && typeof redemption.redeemedAt === 'object' && 'toDate' in redemption.redeemedAt)
+            ? (redemption.redeemedAt as any).toDate()
+            : (redemption?.redeemedAt || null),
           completedGameIds: participant.completedGames || [],
         };
       } catch (participantError) {
