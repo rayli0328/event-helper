@@ -5,6 +5,7 @@ import {
   getDoc, 
   getDocs, 
   updateDoc, 
+  setDoc,
   deleteDoc,
   query, 
   where, 
@@ -239,4 +240,113 @@ export const getGiftRedemptions = async () => {
   );
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GiftRedemption));
+};
+
+// Configuration functions
+export const getConfiguration = async (): Promise<{ eventName: string; eventDescription: string }> => {
+  try {
+    const configRef = doc(db, 'configuration', 'event');
+    const configSnap = await getDoc(configRef);
+    
+    if (configSnap.exists()) {
+      const data = configSnap.data();
+      return {
+        eventName: data.eventName || 'Event Name Placeholder',
+        eventDescription: data.eventDescription || 'Start your stamp collection journey',
+      };
+    } else {
+      // Return default values if no configuration exists
+      return {
+        eventName: 'Event Name Placeholder',
+        eventDescription: 'Start your stamp collection journey',
+      };
+    }
+  } catch (error) {
+    console.error('Error getting configuration:', error);
+    return {
+      eventName: 'Event Name Placeholder',
+      eventDescription: 'Start your stamp collection journey',
+    };
+  }
+};
+
+export const updateConfiguration = async (eventName: string, eventDescription: string): Promise<void> => {
+  try {
+    const configRef = doc(db, 'configuration', 'event');
+    await updateDoc(configRef, {
+      eventName,
+      eventDescription,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    // If document doesn't exist, create it
+    if (error.code === 'not-found') {
+      const configRef = doc(db, 'configuration', 'event');
+      await setDoc(configRef, {
+        eventName,
+        eventDescription,
+        updatedAt: Timestamp.now(),
+      });
+    } else {
+      console.error('Error updating configuration:', error);
+      throw error;
+    }
+  }
+};
+
+// Report functions
+export const getAllParticipants = async () => {
+  const q = query(collection(db, 'participants'), orderBy('createdAt', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Participant));
+};
+
+export const getParticipantReport = async () => {
+  try {
+    const participants = await getAllParticipants();
+    const games = await getActiveGames();
+    const giftRedemptions = await getGiftRedemptions();
+    
+    // Create a map of gift redemptions for quick lookup
+    const redemptionMap = new Map();
+    giftRedemptions.forEach(redemption => {
+      redemptionMap.set(redemption.participantId, redemption);
+    });
+    
+    // Create report data
+    const reportData = participants.map(participant => {
+      const redemption = redemptionMap.get(participant.id);
+      const completedGamesCount = participant.completedGames?.length || 0;
+      const totalGames = games.length;
+      const completionPercentage = totalGames > 0 ? Math.round((completedGamesCount / totalGames) * 100) : 0;
+      
+      return {
+        staffId: participant.staffId,
+        lastName: participant.lastName,
+        createdAt: participant.createdAt?.toDate?.() || new Date(),
+        completedGames: completedGamesCount,
+        totalGames: totalGames,
+        completionPercentage: completionPercentage,
+        giftRedeemed: participant.giftRedeemed || false,
+        giftRedeemedAt: redemption?.redeemedAt?.toDate?.() || null,
+        completedGameIds: participant.completedGames || [],
+      };
+    });
+    
+    return {
+      participants: reportData,
+      games: games,
+      summary: {
+        totalParticipants: participants.length,
+        totalGames: games.length,
+        participantsWithGifts: participants.filter(p => p.giftRedeemed).length,
+        averageCompletion: participants.length > 0 
+          ? Math.round(participants.reduce((sum, p) => sum + ((p.completedGames?.length || 0) / games.length * 100), 0) / participants.length)
+          : 0,
+      }
+    };
+  } catch (error) {
+    console.error('Error generating participant report:', error);
+    throw error;
+  }
 };

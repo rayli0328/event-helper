@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { createGame, getGames, createGameHost, getGameHosts, deleteGame } from '@/lib/database';
 import { Game, GameHost } from '@/types';
-import { ArrowLeft, Plus, Settings, Users, Trash2, Database, QrCode, Gamepad2 } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, Users, Trash2, Database, QrCode, Gamepad2, BarChart3, Download } from 'lucide-react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useConfig } from '@/contexts/ConfigContext';
+import { getParticipantReport } from '@/lib/database';
+import { exportParticipantReport } from '@/lib/excelExport';
 
 function AdminPageContent() {
   const { eventName, eventDescription, updateConfig } = useConfig();
@@ -15,7 +17,7 @@ function AdminPageContent() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
-  const [activeTab, setActiveTab] = useState<'games' | 'hosts' | 'config' | 'debug'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'hosts' | 'config' | 'debug' | 'reports'>('games');
 
   // Game form state
   const [gameForm, setGameForm] = useState({
@@ -29,6 +31,10 @@ function AdminPageContent() {
     eventName: eventName,
     eventDescription: eventDescription,
   });
+
+  // Report state
+  const [reportData, setReportData] = useState<any>(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   // Host form state
   const [hostForm, setHostForm] = useState({
@@ -119,6 +125,27 @@ function AdminPageContent() {
     }
   };
 
+  const loadReport = async () => {
+    try {
+      setReportLoading(true);
+      const data = await getParticipantReport();
+      setReportData(data);
+    } catch (error) {
+      setMessage('Error loading report. Please try again.');
+      setMessageType('error');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const handleExportReport = () => {
+    if (reportData) {
+      exportParticipantReport(reportData);
+      setMessage('Report exported successfully!');
+      setMessageType('success');
+    }
+  };
+
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-4xl mx-auto">
@@ -175,6 +202,17 @@ function AdminPageContent() {
               Configuration
             </button>
             <button
+              onClick={() => setActiveTab('reports')}
+              className={`px-6 py-3 font-medium ${
+                activeTab === 'reports'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5 inline mr-2" />
+              Reports
+            </button>
+            <button
               onClick={() => setActiveTab('debug')}
               className={`px-6 py-3 font-medium ${
                 activeTab === 'debug'
@@ -182,7 +220,7 @@ function AdminPageContent() {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Settings className="w-5 h-5 inline mr-2" />
+              <Database className="w-5 h-5 inline mr-2" />
               Debug Tools
             </button>
           </div>
@@ -411,14 +449,23 @@ function AdminPageContent() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    updateConfig(configForm.eventName, configForm.eventDescription);
-                    setMessage('Configuration saved successfully!');
-                    setMessageType('success');
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      await updateConfig(configForm.eventName, configForm.eventDescription);
+                      setMessage('Configuration saved successfully!');
+                      setMessageType('success');
+                    } catch (error) {
+                      setMessage('Error saving configuration. Please try again.');
+                      setMessageType('error');
+                    } finally {
+                      setLoading(false);
+                    }
                   }}
-                  className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                  disabled={loading}
+                  className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Save Configuration
+                  {loading ? 'Saving...' : 'Save Configuration'}
                 </button>
               </div>
             </div>
@@ -432,6 +479,119 @@ function AdminPageContent() {
                 <p>• <strong>Gift Corner:</strong> Email contains "gift", "staff", or "admin"</p>
                 <p className="mt-2 text-xs">To modify RBAC rules, edit the <code>hasRole</code> function in <code>src/contexts/AuthContext.tsx</code></p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reports Tab */}
+        {activeTab === 'reports' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">Participant Activity Report</h2>
+                <div className="flex gap-3">
+                  <button
+                    onClick={loadReport}
+                    disabled={reportLoading}
+                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    {reportLoading ? 'Loading...' : 'Load Report'}
+                  </button>
+                  {reportData && (
+                    <button
+                      onClick={handleExportReport}
+                      className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Excel
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {reportData && (
+                <div className="space-y-6">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="text-2xl font-bold text-blue-600">{reportData.summary.totalParticipants}</div>
+                      <div className="text-sm text-blue-800">Total Participants</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4">
+                      <div className="text-2xl font-bold text-green-600">{reportData.summary.totalGames}</div>
+                      <div className="text-sm text-green-800">Total Games</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <div className="text-2xl font-bold text-purple-600">{reportData.summary.participantsWithGifts}</div>
+                      <div className="text-sm text-purple-800">Gifts Redeemed</div>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-4">
+                      <div className="text-2xl font-bold text-orange-600">{reportData.summary.averageCompletion}%</div>
+                      <div className="text-sm text-orange-800">Avg Completion</div>
+                    </div>
+                  </div>
+
+                  {/* Participants Table */}
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gift Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {reportData.participants.map((participant: any, index: number) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">{participant.staffId}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900">{participant.lastName}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {participant.createdAt.toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full" 
+                                    style={{ width: `${participant.completionPercentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-gray-600">{participant.completionPercentage}%</span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {participant.completedGames}/{participant.totalGames} games
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {participant.giftRedeemed ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  Redeemed
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Not Redeemed
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {!reportData && !reportLoading && (
+                <div className="text-center py-12">
+                  <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Report Data</h3>
+                  <p className="text-gray-500 mb-4">Click "Load Report" to generate participant activity data</p>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,11 +1,13 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { getConfiguration, updateConfiguration } from '@/lib/database';
 
 interface ConfigContextType {
   eventName: string;
   eventDescription: string;
-  updateConfig: (name: string, description: string) => void;
+  updateConfig: (name: string, description: string) => Promise<void>;
+  loading: boolean;
 }
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
@@ -13,32 +15,41 @@ const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const [eventName, setEventName] = useState('Event Name Placeholder');
   const [eventDescription, setEventDescription] = useState('Start your stamp collection journey');
+  const [loading, setLoading] = useState(true);
 
-  const updateConfig = (name: string, description: string) => {
-    setEventName(name);
-    setEventDescription(description);
-    // In a real app, you'd save this to localStorage or a database
-    localStorage.setItem('eventConfig', JSON.stringify({ name, description }));
+  const updateConfig = async (name: string, description: string) => {
+    try {
+      await updateConfiguration(name, description);
+      setEventName(name);
+      setEventDescription(description);
+    } catch (error) {
+      console.error('Error updating configuration:', error);
+      throw error;
+    }
   };
 
   useEffect(() => {
-    // Load configuration from localStorage on mount
-    const savedConfig = localStorage.getItem('eventConfig');
-    if (savedConfig) {
+    const loadConfiguration = async () => {
       try {
-        const config = JSON.parse(savedConfig);
-        setEventName(config.name);
-        setEventDescription(config.description);
+        setLoading(true);
+        const config = await getConfiguration();
+        setEventName(config.eventName);
+        setEventDescription(config.eventDescription);
       } catch (error) {
-        console.error('Error loading config:', error);
+        console.error('Error loading configuration:', error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    loadConfiguration();
   }, []);
 
   const value = {
     eventName,
     eventDescription,
     updateConfig,
+    loading,
   };
 
   return (
