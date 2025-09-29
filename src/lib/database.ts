@@ -323,12 +323,12 @@ export const getParticipantReport = async () => {
       return {
         staffId: participant.staffId,
         lastName: participant.lastName,
-        createdAt: participant.createdAt?.toDate?.() || new Date(),
+        createdAt: participant.createdAt || new Date(),
         completedGames: completedGamesCount,
         totalGames: totalGames,
         completionPercentage: completionPercentage,
         giftRedeemed: participant.giftRedeemed || false,
-        giftRedeemedAt: redemption?.redeemedAt?.toDate?.() || null,
+        giftRedeemedAt: redemption?.redeemedAt || null,
         completedGameIds: participant.completedGames || [],
       };
     });
